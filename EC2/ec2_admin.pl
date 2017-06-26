@@ -953,7 +953,7 @@ sub _sec_convert {
 sub _myexit{
 	$EC=shift;
 	if ($EC eq "2") {
-		system("rm -f /tmp/$OFILE.*");
+        unlink "/tmp/$OFILE.*";
 	}
 	if ( @OUTPUT && $EC ne "2" ) {
 		foreach (@OUTPUT) {
@@ -992,7 +992,7 @@ $SIG {"TERM"} = \&_term_exit;
 $SIG {"HUP"} = \&_term_exit;
 $SIG {"INT"} = \&_int_exit;
 
-system("clear");
+print "\033[2J";    #clear the screen
 
 if (! $ARGV[0]) {
 	$EC="1";
