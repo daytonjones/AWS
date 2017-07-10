@@ -866,8 +866,7 @@ sub _show_instances {
             $devName   = $dev->deviceName;
             $volume    = $dev->volume;
             $delete    = $dev->deleteOnTermination;
-			if ($delete eq "1"){$delete="True";}
-			if ($delete eq "0"){$delete="False";}
+			if ($delete eq "1"){$delete="True";}else{$delete="False";}
             @vols = $ec2->describe_volumes(-volume_id=>$volume);
             foreach $vol (@vols) {
                 $vid    = $vol->volumeId;
@@ -887,7 +886,7 @@ sub _show_instances {
                 }else{
                     $enc="False";
                 }
-            printf("%-21s %-50s\n","    ","Name: $devName");
+            printf("%-21s %-50s\n","    ","$devName");
             printf("%-26s %-50s\n","    ","ID: $vid");
             printf("%-26s %-50s\n","    ","Type: $vtype");
             printf("%-26s %-50s\n","    ","Delete on Termination: $delete");
@@ -910,7 +909,7 @@ sub _show_instances {
 			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Created}="$ctime";
 			if ($origin){$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Origin}="$origin";}
 			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Encrypted}="$enc";
-			&_print_txt ("\t\t\tName: $devName\n");
+			&_print_txt ("\t\t\t$devName\n");
 			&_print_txt ("\t\t\t\tID: $vid\n");
 			&_print_txt ("\t\t\t\tType: $vtype\n");
 			&_print_txt ("\t\t\t\tDelete on Termination: $delete\n");
@@ -961,10 +960,10 @@ sub _show_instances {
 		    $sg 		= $ec2->describe_security_groups($g);
 		    @gperms_i		= $sg->ipPermissions;
 		    @gperms_e		= $sg->ipPermissionsEgress;
-			printf("%-21s %-50s\n","    ","ID: $gid");
-			printf("%-26s %-50s\n","    ","Name: $gname");
-			&_print_txt ("\t\t\tID: $gid\n");
-			&_print_txt ("\t\t\t\tName: $gname\n");
+			printf("%-21s %-50s\n","    ","$gname");
+			printf("%-26s %-50s\n","    ","ID: $gid");
+			&_print_txt ("\t\t\t$gname\n");
+			&_print_txt ("\t\t\t\tID: $gid\n");
 			if (@gperms_i) {
 				printf("%-26s %-50s\n","    ","Ingress Rules:");
 				&_print_txt ("\t\t\t\tIngress Rules:\n");
