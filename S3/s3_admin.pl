@@ -25,7 +25,10 @@
 # Test for required modules
 BEGIN {
     @MODULES=("Getopt::Long","JSON","List::MoreUtils","Term::ANSIColor","Amazon::S3");
-    foreach $m (@MODULES) {eval("use $m");if ($@) {die "\n\t!!! Error: $m module not found!!!\n\n\tPlease install the $m perl module:\n\t\'perl -MCPAN -e 'install $m\' or \'cpan $m\'\n\n";}}
+    foreach $m (@MODULES) {eval("use $m");if ($@) {warn "\n\t!!! Error: $m module not found!!!\n\n\tPlease install the $m perl module:\n\t\'perl -MCPAN -e 'install $m\' or \'cpan $m\'\n\n";$missing="yes";}}
+    if ($missing) {
+        exit 1;
+    }
 }
 
 if ($ENV{'EC2_ACCESS_KEY'}) {$ec2_access_id =  $ENV{'EC2_ACCESS_KEY'}};
