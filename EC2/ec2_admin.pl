@@ -191,23 +191,50 @@ sub _print_txt{
 }
 
 sub _set_url {
+# "switch" is part of perl core, but may be "fragile"
+# if this doesn't work, comment out the switch stanza (and remove from module list)
+# and then uncomment the "given" section as well as the "use feature/no warnings"
+# "given" requires perl 5.10 or newer
+
     switch ($ec2_region) {
-    case "ap-northeast-1"   { $ec2_url="http://ec2.ap-northeast-1.amazonaws.com" }
-    case "ap-northeast-2"   { $ec2_url="http://ec2.ap-northeast-2.amazonaws.com" }
-    case "ap-south-1"       { $ec2_url="http://ec2.ap-south-1.amazonaws.com" }
-    case "ap-southeast-1"   { $ec2_url="http://ec2.ap-southeast-1.amazonaws.com" }
-    case "ap-southeast-2"   { $ec2_url="http://ec2.ap-southeast-2.amazonaws.com" }
-    case "ca-central-1"     { $ec2_url="http://ec2.ca-central-1.amazonaws.com" }
-    case "eu-central-1"     { $ec2_url="http://ec2.eu-central-1.amazonaws.com" }
-    case "eu-west-1"        { $ec2_url="http://ec2.eu-west-1.amazonaws.com" }
-    case "eu-west-2"        { $ec2_url="http://ec2.eu-west-2.amazonaws.com" }
-    case "sa-east-1"        { $ec2_url="http://ec2.sa-east-1.amazonaws.com" }
-    case "us-east-1"        { $ec2_url="http://ec2.us-east-1.amazonaws.com" }
-    case "us-east-2"        { $ec2_url="http://ec2.us-east-2.amazonaws.com" }
-    case "us-west-1"        { $ec2_url="http://ec2.us-west-1.amazonaws.com" }
-    case "us-west-2"        { $ec2_url="http://ec2.us-west-2.amazonaws.com" }
-    else                    { $ec2_url="http://ec2.amazonaws.com" }
+        case "ap-northeast-1"   { $ec2_url="http://ec2.ap-northeast-1.amazonaws.com" }
+        case "ap-northeast-2"   { $ec2_url="http://ec2.ap-northeast-2.amazonaws.com" }
+        case "ap-south-1"       { $ec2_url="http://ec2.ap-south-1.amazonaws.com" }
+        case "ap-southeast-1"   { $ec2_url="http://ec2.ap-southeast-1.amazonaws.com" }
+        case "ap-southeast-2"   { $ec2_url="http://ec2.ap-southeast-2.amazonaws.com" }
+        case "ca-central-1"     { $ec2_url="http://ec2.ca-central-1.amazonaws.com" }
+        case "eu-central-1"     { $ec2_url="http://ec2.eu-central-1.amazonaws.com" }
+        case "eu-west-1"        { $ec2_url="http://ec2.eu-west-1.amazonaws.com" }
+        case "eu-west-2"        { $ec2_url="http://ec2.eu-west-2.amazonaws.com" }
+        case "sa-east-1"        { $ec2_url="http://ec2.sa-east-1.amazonaws.com" }
+        case "us-east-1"        { $ec2_url="http://ec2.us-east-1.amazonaws.com" }
+        case "us-east-2"        { $ec2_url="http://ec2.us-east-2.amazonaws.com" }
+        case "us-west-1"        { $ec2_url="http://ec2.us-west-1.amazonaws.com" }
+        case "us-west-2"        { $ec2_url="http://ec2.us-west-2.amazonaws.com" }
+        else                    { $ec2_url="http://ec2.amazonaws.com" }
     }
+
+#use feature qw/switch/;
+#no warnings "experimental::smartmatch";
+
+#    given($ec2_region) {
+#        when (/ap-northeast-1/){ $ec2_url="http://ec2.ap-northeast-1.amazonaws.com"; }
+#        when (/ap-northeast-2/){ $ec2_url="http://ec2.ap-northeast-2.amazonaws.com"; }
+#        when (/ap-south-1/)    { $ec2_url="http://ec2.ap-south-1.amazonaws.com"; }
+#        when (/ap-southeast-1/){ $ec2_url="http://ec2.ap-southeast-1.amazonaws.com"; }
+#        when (/ap-southeast-2/){ $ec2_url="http://ec2.ap-southeast-2.amazonaws.com"; }
+#        when (/ca-central-1/)  { $ec2_url="http://ec2.ca-central-1.amazonaws.com"; }
+#        when (/eu-central-1/)  { $ec2_url="http://ec2.eu-central-1.amazonaws.com"; }
+#        when (/eu-west-1/)     { $ec2_url="http://ec2.eu-west-1.amazonaws.com"; }
+#        when (/eu-west-2/)     { $ec2_url="http://ec2.eu-west-2.amazonaws.com"; }
+#        when (/sa-east-1/)     { $ec2_url="http://ec2.sa-east-1.amazonaws.com"; }
+#        when (/us-east-1/)     { $ec2_url="http://ec2.us-east-1.amazonaws.com"; }
+#        when (/us-east-2/)     { $ec2_url="http://ec2.us-east-2.amazonaws.com"; }
+#        when (/us-west-1/)     { $ec2_url="http://ec2.us-west-1.amazonaws.com"; }
+#        when (/us-west-2/)     { $ec2_url="http://ec2.us-west-2.amazonaws.com"; }
+#        default                { $ec2_url="http://ec2.amazonaws.com"; }
+#    }
+
 }
 
 sub _check_vars {
@@ -215,18 +242,17 @@ sub _check_vars {
         $missing="true";
         $var=$var . " \"ec2_access_id\"";
     }
+
     if (! $ec2_secret_key) {
         $missing="true";
         $var=$var . " \"ec2_secret_key\"";
     }
+
     if (! $ec2_region) {
         $missing="true";
         $var=$var . " \"ec2_region\"";
     }
-    if (! $ec2_url) {
-        #$ec2_url="http://ec2.amazonaws.com";
-        _set_url;
-    }
+
     if ($missing){
 		$EC="1";
 		print colored ['red'],("!" x $sw);
@@ -236,7 +262,13 @@ sub _check_vars {
 		_help;
         _myexit ($EC);
     }
+
+    if (! $ec2_url) {
+        #$ec2_url="http://ec2.amazonaws.com";
+        _set_url;
+    }
 }
+
 sub _get_opts {
 	GetOptions(
     	'version'       	=>\$VERSION,
