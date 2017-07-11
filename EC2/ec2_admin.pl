@@ -1,4 +1,4 @@
-#! /usr/bin/env perl
+#!/usr/bin/env perl
 #===============================================================================
 #
 #         FILE: ec2_admin.pl
@@ -160,15 +160,15 @@ sub _mask_it {
 		my $mask='XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
 		my @mask=split( '', $mask );
 		my @secret=split( '', $ec2_secret_key );
-		my $masked_secret = join '', pairwise { $a ? 'x' : $b } @mask, @secret;
-        $h_href{$OFILE}{INFO}{EC2}{"Secret Key"}=$masked_secret;
+		$masked_secret = join '', pairwise { $a ? 'x' : $b } @mask, @secret;
+		return ($masked_secret);
 	}
 	if ($u_type eq "id"){
 		my $mask='XXXXXXXXXXXXXXX';
 		my @mask=split( '', $mask );
 		my @eid=split( '', $ec2_access_id );
         $masked_id = join '', pairwise { $a ? 'x' : $b } @mask, @eid;
-        $h_href{$OFILE}{INFO}{EC2}{"Access ID"}=$masked_id;
+		return ($masked_id);
 	}
 }
 sub _print_json {
@@ -192,7 +192,7 @@ sub _print_txt{
 
 sub _set_url {
 # "switch" is part of perl core, but may be "fragile"
-# if this doesn't work, comment out the switch stanza (and remove from module list)
+# if this doesn't work, comment out the switch stanza
 # and then uncomment the "given" section as well as the "use feature/no warnings"
 # "given" requires perl 5.10 or newer
 
@@ -264,7 +264,6 @@ sub _check_vars {
     }
 
     if (! $ec2_url) {
-        #$ec2_url="http://ec2.amazonaws.com";
         _set_url;
     }
 }
@@ -301,6 +300,8 @@ sub _get_opts {
     }
 
     &_check_vars;
+	&_mask_it ("id");
+	&_mask_it ("secret");
 
     if (@OUTPUT){
         $output="true";
@@ -313,8 +314,8 @@ sub _get_opts {
 				$my_OFILE = $OFILE . ".json";
 				open(JSON_OUT,">>/tmp/$my_OFILE");
                 %h_href=();
-				&_mask_it ("id");
-				&_mask_it ("secret");
+				$h_href{$OFILE}{INFO}{EC2}{"Access ID"}=$masked_id;
+				$h_href{$OFILE}{INFO}{EC2}{"Secret Key"}=$masked_secret;
                 $h_href{$OFILE}{INFO}{Execution}{Command}=$commandline;
                 $h_href{$OFILE}{INFO}{EC2}{"Default Region"}=$ec2_region;
                 $h_href{$OFILE}{INFO}{EC2}{"API Endpoint"}=$ec2_url;
@@ -934,10 +935,8 @@ sub _show_instances {
                 $ctime = $vol->createTime;
                 $origin      = $vol->from_snapshot;
                 $enc         = $vol->encrypted;
-##
 				$vtype		= $vol->volumeType;
 				$iops		= $vol->iops;
-##
                 if ($enc){
                     $enc="True";
                 }else{
@@ -1081,19 +1080,47 @@ sub _myexit{
 	if ($EC eq "2") {
         unlink "/tmp/$OFILE.*";
 	}
+    chomp($end=`date`);
+    $es=time();
+    $run_secs = $es - $ss;
+    &_sec_convert($run_secs);
+	print "\n";
+	print colored ['cyan'],("=" x $sw);
+	print "\n";
+	if ($h_total){print "Total Instances found: $h_total\n";}
+	if ($r_count){print "Total Regions found: $r_count\n";}
+	if ($a_count){print "Total AMIs found: $a_count\n";}
+	print "Execution Start: $start\n";
+	print "Execution End: $end\n";
+	print "Execution Time: $run_time\n\n";
+	print "Command: $commandline\n";
+	print "User: $USER\n";
+	print "AWS Access ID: $masked_id\n";
+	print "AWS Secet Key: $masked_secret\n";
+	print "AWS Region: $ec2_region\n";
+	print "AWS API URL: $ec2_url\n";
 	if ( @OUTPUT && $EC ne "2" ) {
 		foreach (@OUTPUT) {
 			if (($_ eq "text") || ($_ eq "") || ($_ eq "t")) {
 				$myOFILE=$OFILE . ".txt";
+				&_print_txt ("\n====================================================\n");
+				if ($h_total){&_print_txt ("Total Instances found: $h_total\n");}
+				if ($r_count){&_print_txt ("Total Regions found: $r_count\n");}
+				if ($a_count){&_print_txt ("Total AMIs found: $a_count\n");}
+				&_print_txt ("Execution Start: $start\n");
+				&_print_txt ("Execution End: $end\n");
+				&_print_txt ("Execution Time: $run_time\n\n");
+				&_print_txt ("Command: $commandline\n");
+				&_print_txt ("User: $USER\n");
+				&_print_txt ("AWS Access ID: $masked_id\n");
+				&_print_txt ("AWS Secet Key: $masked_secret\n");
+				&_print_txt ("AWS Region: $ec2_region\n");
+				&_print_txt ("AWS API URL: $ec2_url\n");
 				close($myOFILE);
 				push @files,"/tmp/$myOFILE";
 			} elsif (($_ eq "json") || ($_ eq "j")) {
 				$myOFILE=$OFILE . ".json";
-                chomp($end=`date`);
-                $es=time();
-                $run_secs = $es - $ss;
-                &_sec_convert($run_secs);
-                $h_href{$OFILE}{INFO}{Totals}{"Total Instances found"}=$h_total;
+                if ($h_total){$h_href{$OFILE}{INFO}{Totals}{"Total Instances found"}=$h_total;}
                 $h_href{$OFILE}{INFO}{Execution}{Start}=$start;
                 $h_href{$OFILE}{INFO}{Execution}{End}=$end;
                 $h_href{$OFILE}{INFO}{Execution}{Time}="$run_time";
