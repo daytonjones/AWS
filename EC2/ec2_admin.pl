@@ -141,7 +141,7 @@ sub _term_exit {
     print colored ['red'],"\n$PROGNAME: Terminated\n";
 	$EC="1";
 	if ($output){
-		&_print_txt ("$PROGNAME: Terminated\n");
+        if ($print_txt){printf TXT ("%s\n","$PROGNAME: Terminated");}
 	}
     _myexit ($EC);
 }
@@ -150,7 +150,7 @@ sub _int_exit {
     print colored ['yellow'],"\n$PROGNAME: " . colored ['red'], "Aborted by user\n";
 	$EC="1";
 	if ($output) {
-		&_print_txt ("Aborted by user\n");
+        if ($print_txt){printf TXT ("%s\n", "Aborted by user");}
 	}
     _myexit ($EC);
 }
@@ -180,16 +180,6 @@ sub _print_json {
     $json = $json->allow_blessed(["true"]);
     $js= $json->pretty->encode( $j_out ) or die "Error: $!\n";
     print JSON_OUT $js;
-}
-
-sub _print_txt{
-	$out_info=shift;
-    foreach $t (@OUTPUT){
-        $t = lc $t;
-        if (($t eq "") || ($t eq "text") || ($t eq "t")){
-	        print TXT ($out_info);
-        }
-    }
 }
 
 sub _set_url {
@@ -312,6 +302,7 @@ sub _get_opts {
 			if (($ot eq "text") || ($ot eq "") || ($ot eq "t")) {
 				$my_OFILE = $OFILE . ".txt";
 				open(TXT,">>/tmp/$my_OFILE");
+                $print_txt="true";
 			} elsif (($ot eq "json") || ($ot eq "j")) {
 				$my_OFILE = $OFILE . ".json";
 				open(JSON_OUT,">>/tmp/$my_OFILE");
@@ -359,7 +350,6 @@ sub _get_opts {
 
     if (@SEARCHES) {
         print colored ['green'],"Gathering region info...\n\n";
-#		&_print_txt ("Gathering region info...\n\n");
         &_get_region_info;
         foreach $search (sort @SEARCHES) {
             ($type,$what)=split(/=/,$search);
@@ -385,7 +375,7 @@ sub _get_opts {
                     next if ($s eq "");
                     ($t_key,$t_val)=split(/:/,$s);
                     print "Searching for tag: $t_key=>$t_val in all regions...\n";
-					&_print_txt ("Searching for tag: $t_key=>$t_val in all regions...\n");
+                    if ($print_txt){printf TXT ("%s\n","Searching for tag: $t_key=>$t_val in all regions...");}
 					foreach my $r (@r_name){
                     	&_search_instance_tag($t_key,$t_val,$r);
 					}
@@ -398,7 +388,7 @@ sub _get_opts {
                 foreach my $s (@values){
                     next if ($s eq "");
                     print "Searching for instance \"$s\" in all regions...\n";
-					&_print_txt ("Searching for instance \"$s\" in all regions...\n");
+					if ($print_txt){printf TXT ("%s\n","Searching for instance \"$s\" in all regions...");}
                     foreach my $r (@r_name){
                         &_search_instances($r,$s);
                         $count=scalar(@i);
@@ -407,7 +397,7 @@ sub _get_opts {
                         } else {
 		                    foreach (@i) {
                                 printf("%s%s%s\n", "[", colored($_,'yellow'), "]");
-								&_print_txt ("[$_]\n");
+								if ($print_txt){printf TXT ("%s\n","[$_]");}
         	                    _show_instances($_,$r);
     	                    }
                         }
@@ -422,7 +412,7 @@ sub _get_opts {
                     next if ($s eq "");
                     $s="*" . $s . "*";
                     print "Searching for \"$s\" in all regions...\n";
-					&_print_txt ("Searching for \"$s\" in all regions...\n");
+					if ($print_txt){printf TXT ("%s\n","Searching for \"$s\" in all regions...");}
                     foreach my $r (@r_name){
                         &_search_hosts($r,$s);
                         $count=scalar(@i);
@@ -441,7 +431,7 @@ sub _get_opts {
                 foreach my $t (@values){
                     next if ($t eq "");
                     print "Searching for \"$t\" instances in all regions...\n";
-                    &_print_txt ("Searching for \"$t\ instances in all regions...\n");
+                    if ($print_txt){printf TXT ("%s\n","Searching for \"$t\ instances in all regions...");}
                     foreach my $r (@r_name){
                         &_search_types($r,$t);
                         $count=scalar(@i);
@@ -454,7 +444,7 @@ sub _get_opts {
                     }
                     if (! $found){
                         print "Sorry, no $t instances found\n\n";
-                        &_print_txt ("Sorry, no $t instances found\n\n");
+                        if ($print_txt){printf TXT ("%s\n\n","Sorry, no $t instances found");}
                     }
                 }
             }
@@ -470,7 +460,7 @@ sub _get_opts {
 		&_get_instances;
 		foreach (@i) {
         	printf("%s%s%s\n", "[", colored($_,'yellow'), "]");
-			&_print_txt ("[$_]\n");
+			if ($print_txt){printf TXT ("%s\n","[$_]");}
         	_show_instances($_,$ec2_region);
     	}
     }
@@ -502,7 +492,7 @@ sub _search_instance_tag {
             } else {
             	foreach (@i) {
                 	printf("%s%s%s\n", "[", colored($_,'yellow'), "]");
-                    &_print_txt ("[$_]\n");
+                    if ($print_txt){printf TXT ("%s\n","[$_]");}
                     _show_instances($_,$my_ec2_region);
                 }
             }
@@ -536,7 +526,7 @@ sub _show_ami_zone{
     @AMI  = $ec2a->describe_images(-owner=>$imageowner);
     if (! @AMI) {
         printf("%-21s %-50s\n","    ","No AMIs found");
-        &_print_txt ("\t\tNo AMIs found\n");
+        if ($print_txt){printf TXT ("%-21s %-50s\n","    ","No AMIs found");}
         return;
     }
 	foreach (sort @AMI){
@@ -558,38 +548,41 @@ sub _show_ami_zone{
             $Public = "False";
         }
 		printf("%-21s %-50s\n","    ","$_");
-        printf("%-26s %-50s\n", "    ","Description: $Desc");
-        printf("%-26s %-50s\n", "    ","Architecture: $Arc");
-        printf("%-26s %-50s\n", "    ","Virtualization: $VirtType");
-        printf("%-26s %-50s\n", "    ","Root Device Type: $RootDevType");
-        &_print_txt ("\t\t$_\n");
-        &_print_txt ("\t\t   Description: $Desc\n");
-        &_print_txt ("\t\t   Architecture: $Arc\n");
-        &_print_txt ("\t\t   Virtualization: $VirtType\n");
-        &_print_txt ("\t\t   Root Device Type: $RootDevType\n");
+        printf("%-26s %-50s\n","    ","Description: $Desc");
+        printf("%-26s %-50s\n","    ","Architecture: $Arc");
+        printf("%-26s %-50s\n","    ","Virtualization: $VirtType");
+        printf("%-26s %-50s\n","    ","Root Device Type: $RootDevType");
+        if ($print_txt){
+            undef $s;
+		    printf TXT ("%-21s %-50s\n","    ","$_");
+            printf TXT ("%-26s %-50s\n","    ","Description: $Desc");
+            printf TXT ("%-26s %-50s\n","    ","Architecture: $Arc");
+            printf TXT ("%-26s %-50s\n","    ","Virtualization: $VirtType");
+            printf TXT ("%-26s %-50s\n","    ","Root Device Type: $RootDevType");
+        }
         $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{Description}=$Desc;
         $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{Architecture}=$Arc;
         $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{Virtualization}=$VirtType;
         $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{RootDevType}=$RootDevType;
         unless ( ! %$i_tags ){
 				printf("%-26s %-50s\n", "    ","Tags:");
-                &_print_txt ("\t\t   Tags:\n");
+				if ($print_txt){printf TXT ("%-26s %-50s\n", "    ","Tags:");}
                 foreach my $key (sort keys %$i_tags) {
                 	$value = $i_tags->{$key};
                 	printf("%-30s %-50s\n","    ","$key: $value");
-                	&_print_txt ("\t\t\t$key: $value\n");
+                	if ($print_txt){printf TXT ("%-30s %-50s\n","    ","$key: $value");}
                     $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{Tags}{$key}=$value;
                 }
         }
         print "\n";
-        &_print_txt ("\n");
+        if ($print_txt){printf TXT (%s,"\n");}
     }
 }
 
 sub _show_ami {
     $imageowner = "self";
     print colored ['green'],"Gathering AMI info for $ec2_region...\n\n";
-    &_print_txt ("Gathering AMI info for $ec2_region...\n\n");
+    if ($print_txt){printf TXT ("%s\n\n","Gathering AMI info for $ec2_region...");}
     $ec2       = VM::EC2->new(-access_key => $ec2_access_id,-secret_key => $ec2_secret_key,-endpoint => $ec2_url,-region=>$ec2_region);
     @AMI  = $ec2->describe_images(-owner=>$imageowner);
 	unless (@AMI) {
@@ -627,17 +620,19 @@ sub _show_ami {
     	printf("%-30s %-50s\n", colored("    Hypervisor:",'blue'),$HV);
     	printf("%-30s %-50s\n", colored("    Root Device Type:",'blue'),$RootDevType);
     	printf("%-30s %-50s\n", colored("    Public:",'blue'),$Public);
-        &_print_txt ("[$_]\n");
-    	&_print_txt ("\tOwner: $OwnerID\n");
-    	&_print_txt ("\tName: $Name\n");
-    	&_print_txt ("\tDescription:\ $Desc\n");
-    	&_print_txt ("\tState: $State\n");
-    	&_print_txt ("\tImage Type: $ImageType\n");
-    	&_print_txt ("\tArchitecture: $Arc\n");
-    	&_print_txt ("\tVirtualization: $VirtType\n");
-    	&_print_txt ("\tHypervisor: $HV\n");
-    	&_print_txt ("\tRoot Device Type: $RootDevType\n");
-    	&_print_txt ("\tPublic: $Public\n");
+        if ($print_txt){
+            printf TXT ("%s\n", "[$_]");
+    	    printf TXT ("%-30s %-50s\n","    Owner:",$OwnerID);
+    	    printf TXT ("%-30s %-50s\n","    Name:",$Name);
+    	    printf TXT ("%-30s %-50s\n","    Description:",$Desc);
+    	    printf TXT ("%-30s %-50s\n","    State:",$State);
+    	    printf TXT ("%-30s %-50s\n","    Image Type:",$ImageType);
+    	    printf TXT ("%-30s %-50s\n","    Architecture:",$Arc);
+    	    printf TXT ("%-30s %-50s\n","    Virtualization:",$VirtType);
+    	    printf TXT ("%-30s %-50s\n","    Hypervisor:",$HV);
+    	    printf TXT ("%-30s %-50s\n","    Root Device Type:",$RootDevType);
+    	    printf TXT ("%-30s %-50s\n","    Public:",$Public);
+        }
         $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Owner}=$OwnerID;
         $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Name}=$Name;
         $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Description}=$Desc;
@@ -650,22 +645,22 @@ sub _show_ami {
         $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Public}=$Public;
         unless ( ! %$i_tags ){
         	print colored ['blue'],"    Tags:\n";
-        	&_print_txt ("\tTags:\n");
+        	if ($print_txt){ print TXT ("    Tags:\n");}
         	foreach my $key (sort keys %$i_tags) {
             	$value = $i_tags->{$key};
             	printf("%-21s %-50s\n","    ","$key: $value");
-            	&_print_txt ("\t   $key: $value\n");
+            	if ($print_txt){printf TXT ("%-21s %-50s\n","    ","$key: $value");}
                 $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Tags}{$key}=$value;
         	}
     	}
        	print "\n";
-       	&_print_txt ("\n");
+       	if ($print_txt){ print TXT "\n";}
     }
 }
 sub _show_regions {
     &_get_region_info;
     print colored ['green'],"Gathering region info...\n\n";
-	&_print_txt ("Gathering region info...\n\n");
+	if ($print_txt){printf TXT ("%s\n\n","Gathering region info...");}
     foreach $r (sort @regions) {
         $name    = $r->regionName;
         $url     = $r->regionEndpoint;
@@ -673,23 +668,25 @@ sub _show_regions {
         printf("%s%s%s\n", "[", colored("$name",'yellow'),"]");
         printf("%-30s %-20s\n", colored("    Endpoint:",'blue'),$url);
         printf("%-30s\n", colored("    Zones:",'blue'));
-		&_print_txt ("[$name]\n");
-		&_print_txt ("\tEndpoint: $url\n");
-		&_print_txt ("\tZones:\n");
+        if ($print_txt){
+		    printf TXT ("%s\n", "[$name]");
+		    printf TXT ("%-30s %-20s\n","    Endpoint:",$url);
+		    printf TXT ("%-30s\n","    Zones:");
+    }
         $h_href{$OFILE}{REGIONS}{$r}{Endpoint}=$url;
         foreach $z (sort @zones) {
             printf("%-21s %-50s\n","    ",$z);
             push @{ $h_href{$OFILE}{REGIONS}{$name}{Zones}},"$z";
-			&_print_txt ("\t\t$z\n");
+			if ($print_txt){printf TXT ("%-21s %-50s\n","    ",$z);}
         }
         $ec2 = VM::EC2->new(-access_key => $ec2_access_id,-secret_key => $ec2_secret_key,-region=>$name) or die "Error: $!\n";
         @vpc = $ec2->describe_vpcs();
 		if (@vpc) {
 			printf("%-30s\n", colored("    VPCs:",'blue'));
-			&_print_txt ("\tVPCs:\n");
+			if ($print_txt){printf TXT ("%-30s\n","    VPCs:");}
             foreach $v (sort @vpc){
 				printf("%-21s %-50s\n","    ",$v);
-                &_print_txt ("\t\t$v\n");
+                if ($print_txt){printf TXT ("%-21s %-50s\n","    ",$v);}
                 $v = $ec2->describe_vpcs(-vpc_id=>$v);
                 $tenancy = $v->instanceTenancy;
                 $cidr    = $v->cidrBlock;
@@ -698,27 +695,29 @@ sub _show_regions {
                 if ($v_tags->{Name}){
                     $n=$v_tags->{Name};
                     printf("%-26s %-50s\n","    ","Name: $v_tags->{Name}");
-                    &_print_txt ("\t\t   Name: $v_tags->{Name}\n");
+                    if ($print_txt){printf TXT ("%-26s %-50s\n","    ","Name: $v_tags->{Name}");}
                 }
                 printf("%-26s %-50s\n","    ","CIDR Block: $cidr");
                 printf("%-26s %-50s\n","    ","Tenancy: $tenancy");
                 printf("%-26s %-50s\n\n","    ","State: $state");
-                &_print_txt ("\t\t   CIDR Block: $cidr\n");
-                &_print_txt ("\t\t   Tenancy: $tenancy\n");
-                &_print_txt ("\t\t   State: $state\n\n");
+                if ($print_txt){
+                    printf TXT ("%-26s %-50s\n","    ","CIDR Block: $cidr");
+                    printf TXT ("%-26s %-50s\n","    ","Tenancy: $tenancy");
+                    printf TXT ("%-26s %-50s\n\n","    ","State: $state");
+                }
                 $h_href{$OFILE}{REGIONS}{$name}{VPCs}{$v}{$n}{CIDR}=$cidr;
                 $h_href{$OFILE}{REGIONS}{$name}{VPCs}{$v}{$n}{Tenancy}="$tenancy";
                 $h_href{$OFILE}{REGIONS}{$name}{VPCs}{$v}{$n}{State}="$state";
             }
 		}
 		printf("%-30s\n", colored("    AMIs:",'blue'));
-        &_print_txt ("\tAMIs:\n");
+		if ($print_txt){printf TXT ("%-30s\n","    AMIs:");}
 		&_show_ami_zone ($ec2_access_id,$ec2_secret_key,$name);
         print "\n";
-		&_print_txt ("\n");
+		if ($print_txt){printf TXT ("%s","\n");}
     }
     print "\n";
-	&_print_txt ("\n");
+	if ($print_txt){printf TXT ("%s","\n");}
 }
 
 sub _search_hosts () {
@@ -758,7 +757,7 @@ sub _show_hosts {
     foreach $id (@i) {
         next if ($id eq "");
         printf("%s%s%s\n", "[", colored($id,'yellow'), "]");
-		&_print_txt ("[$id]\n");
+        if ($print_txt){printf TXT ("%s\n", "[$id]");}
         _show_instances($id);
     }
 }
@@ -791,11 +790,11 @@ sub _show_types {
         $h_total=$h_count;
     }
     print colored ['green'],"\n$count $s_type instances found in $s_region\n\n";
-    &_print_txt ("\n$count $s_type instances found in $s_region\n\n");
+    if ($print_txt){print TXT "\n$count $s_type instances found in $s_region\n\n";}
 	foreach $h (@i){
 		next if ($h eq "");
 		printf("%s%s%s\n", "[", colored($h,'yellow'), "]");
-        &_print_txt ("[$h]\n");
+        if ($print_txt){printf TXT ("%s\n", "[$h]");}
         _show_instances($h);
 	}
 }
@@ -828,16 +827,16 @@ sub _search_instances () {
 sub _get_instances {
     &_search_instances;
     printf("%s %s...\n", colored("Getting list of instances in",'green'), colored($ec2_region,'cyan'));
-	&_print_txt ("Getting list of instances in $ec2_region\n");
+    if ($print_txt){print TXT "Getting list of instances in $ec2_region\n";}
     $count=scalar(@i);
     if ($count lt "1"){
 		$EC="1";
         print colored ['red'],"0 instances found, please verify your ID and Secret key if this is incorrect\n";
-		&_print_txt ("0 instances found, please verify your ID and Secret key if this is incorrect\n");
+		if ($print_txt){print TXT "0 instances found, please verify your ID and Secret key if this is incorrect\n";}
         _myexit ($EC);
     }
     printf("%s %s %s %s\n\n",colored("Found",'green'),colored($count,'magenta'),colored("instances in",'green'),colored($ec2_region,'cyan'));
-	&_print_txt ("Found $count instances in $ec2_region\n\n");
+    if ($print_txt){printf TXT ("%s %s %s %s\n\n","Found",$count,"instances in",$ec2_region);}
 }
 
 sub _show_instances {
@@ -861,17 +860,17 @@ sub _show_instances {
     $tags               = $instance->tags;
     @devices            = $instance->blockDeviceMapping;
     $profile            = $instance->iamInstanceProfile;
-    ($cruft,$IAMrole)   = split(/\//,$profile->arn);
+    if ($profile){($cruft,$IAMrole)   = split(/\//,$profile->arn);}
 
     if ($tags){
         if ($tags->{Hostname}) {
             $NAME=$tags->{Hostname};
             printf("%-30s %-50s\n", colored("    Hostname",'blue'),$tags->{Hostname});
-            &_print_txt ("\tHostname:\t$tags->{Hostname}\n");
+            if ($print_txt){printf TXT ("%-30s %-50s\n","    Hostname",$tags->{Hostname});}
         } elsif ($tags->{Name}) {
             $NAME=$tags->{Name};
     		printf("%-30s %-50s\n", colored("    Hostname",'blue'),$tags->{Name});
-			&_print_txt ("\tHostname:\t$tags->{Name}\n");
+            if ($print_txt){printf TXT ("%-30s %-50s\n","    Hostname",$tags->{Name});}
 		}
     }
 
@@ -896,19 +895,21 @@ sub _show_instances {
     printf("%-30s %-50s\n", colored("    Launch Time:",'blue'),$time);
     printf("%-30s %-50s\n", colored("    State:",'blue'),$status);
     if ($IAMrole){printf("%-30s %-50s\n", colored("    IAM Role:",'blue'),$IAMrole);}
-	&_print_txt ("\tInstance Type:\t$type\n");
-	&_print_txt ("\tZone:\t\t$placement\n");
-	&_print_txt ("\tVPC:\t\t$vpc\n");
-	&_print_txt ("\tSubnet:\t\t$subnet\n");
-	&_print_txt ("\tReservation:\t$reservationId\n");
-	&_print_txt ("\tImage ID:\t$imageId\n");
-	&_print_txt ("\tPrivate IP:\t$private_ip\n");
-	&_print_txt ("\tPublic IP:\t$public_ip\n");
-	&_print_txt ("\tPrivate Name:\t$private_dns\n");
-	&_print_txt ("\tPublic Name:\t$public_dns\n");
-	&_print_txt ("\tLaunch Time:\t$time\n");
-	&_print_txt ("\tState:\t\t$status\n");
-    if ($IAMrole){&_print_txt ("\tIAM Role:\t\t$IAMrole\n");}
+    if ($print_txt){
+        printf TXT ("%-30s %-50s\n", "    Instance Type:",$type);
+        printf TXT ("%-30s %-50s\n", "    Zone:",$placement);
+        printf TXT ("%-30s %-50s\n", "    VPC:",$vpc);
+        printf TXT ("%-30s %-50s\n", "    Subnet:",$subnet);
+        printf TXT ("%-30s %-50s\n", "    Reservation:",$reservationId);
+        printf TXT ("%-30s %-50s\n", "    Image ID:",$imageId);
+        printf TXT ("%-30s %-50s\n", "    Private IP:",$private_ip);
+        printf TXT ("%-30s %-50s\n", "    Public IP:",$public_ip);
+        printf TXT ("%-30s %-50s\n", "    Private Name:",$private_dns);
+        printf TXT ("%-30s %-50s\n", "    Public Name:",$public_dns);
+        printf TXT ("%-30s %-50s\n", "    Launch Time:",$time);
+        printf TXT ("%-30s %-50s\n", "    State:",$status);
+        if ($IAMrole){printf TXT ("%-30s %-50s\n","    IAM Role:",$IAMrole);}
+    }
     $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Name}=$NAME;
     $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{InstanceType}=$type;
     $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Zone}="$placement";
@@ -926,7 +927,7 @@ sub _show_instances {
 
     if (@devices){
         print colored ['blue'],"    Volumes:\n";
-        &_print_txt ("\tVolumes:\n");
+        if ($print_txt){print TXT "    Volumes:\n";}
         foreach $dev (@devices) {
             $devName   = $dev->deviceName;
             $volume    = $dev->volume;
@@ -949,41 +950,43 @@ sub _show_instances {
                 }else{
                     $enc="False";
                 }
-            printf("%-21s %-50s\n","    ","$devName");
-            printf("%-26s %-50s\n","    ","ID: $vid");
-            printf("%-26s %-50s\n","    ","Type: $vtype");
-            printf("%-26s %-50s\n","    ","Delete on Termination: $delete");
-            printf("%-26s %-50s\n","    ","Size: $size GB");
-            printf("%-26s %-50s\n","    ","IOPS: $iops");
-            if ($snap){printf("%-26s %-50s\n","    ","Snap: $snap");}
-            printf("%-26s %-50s\n","    ","Zone: $vzone");
-            printf("%-26s %-50s\n","    ","Status: $vstatus");
-            printf("%-26s %-50s\n","    ","Created: $ctime");
-            if ($origin){printf("%-26s %-50s\n","    ","Origin: $origin");}
-            printf("%-26s %-50s\n\n","    ","Encrypted: $enc");
-			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{ID}="$vid";
-			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Type}="$vtype";
-			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{"Delete on Termination"}="$delete";
-			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Size}="$size GB";
-			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{IOPS}="$iops";
-			if ($snap){$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Snap}="$snap";}
-			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Zone}="$vzone";
-			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Status}="$vstatus";
-			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Created}="$ctime";
-			if ($origin){$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Origin}="$origin";}
-			$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Encrypted}="$enc";
-			&_print_txt ("\t\t\t$devName\n");
-			&_print_txt ("\t\t\t\tID: $vid\n");
-			&_print_txt ("\t\t\t\tType: $vtype\n");
-			&_print_txt ("\t\t\t\tDelete on Termination: $delete\n");
-			&_print_txt ("\t\t\t\tSize: $size GB\n");
-			&_print_txt ("\t\t\t\tIOPS: $iops\n");
-			if ($snap){&_print_txt ("\t\t\t\tSnap: $snap\n");}
-			&_print_txt ("\t\t\t\tZone: $vzone\n");
-			&_print_txt ("\t\t\t\tStatus: $vstatus\n");
-			&_print_txt ("\t\t\t\tCreated: $ctime\n");
-			if ($origin){&_print_txt ("\t\t\t\tOrigin: $origin\n");}
-			&_print_txt ("\t\t\t\tEncrypted: $enc\n\n");
+                printf("%-21s %-50s\n","    ","$devName");
+                printf("%-26s %-50s\n","    ","ID: $vid");
+                printf("%-26s %-50s\n","    ","Type: $vtype");
+                printf("%-26s %-50s\n","    ","Delete on Termination: $delete");
+                printf("%-26s %-50s\n","    ","Size: $size GB");
+                printf("%-26s %-50s\n","    ","IOPS: $iops");
+                if ($snap){printf("%-26s %-50s\n","    ","Snap: $snap");}
+                printf("%-26s %-50s\n","    ","Zone: $vzone");
+                printf("%-26s %-50s\n","    ","Status: $vstatus");
+                printf("%-26s %-50s\n","    ","Created: $ctime");
+                if ($origin){printf("%-26s %-50s\n","    ","Origin: $origin");}
+                printf("%-26s %-50s\n\n","    ","Encrypted: $enc");
+			    $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{ID}="$vid";
+			    $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Type}="$vtype";
+			    $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{"Delete on Termination"}="$delete";
+			    $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Size}="$size GB";
+			    $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{IOPS}="$iops";
+			    if ($snap){$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Snap}="$snap";}
+			    $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Zone}="$vzone";
+			    $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Status}="$vstatus";
+			    $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Created}="$ctime";
+			    if ($origin){$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Origin}="$origin";}
+			    $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Volumes}{$devName}{Encrypted}="$enc";
+                if ($print_txt){
+                    printf TXT ("%-21s %-50s\n","    ","$devName");
+                    printf TXT ("%-26s %-50s\n","    ","ID: $vid");
+                    printf TXT ("%-26s %-50s\n","    ","Type: $vtype");
+                    printf TXT ("%-26s %-50s\n","    ","Delete on Termination: $delete");
+                    printf TXT ("%-26s %-50s\n","    ","Size: $size GB");
+                    printf TXT ("%-26s %-50s\n","    ","IOPS: $iops");
+                    if ($snap){printf TXT ("%-26s %-50s\n","    ","Snap: $snap");}
+                    printf TXT ("%-26s %-50s\n","    ","Zone: $vzone");
+                    printf TXT ("%-26s %-50s\n","    ","Status: $vstatus");
+                    printf TXT ("%-26s %-50s\n","    ","Created: $ctime");
+                    if ($origin){printf TXT ("%-26s %-50s\n","    ","Origin: $origin");}
+                    printf TXT ("%-26s %-50s\n\n","    ","Encrypted: $enc");
+                }
             }
         }
 
@@ -991,32 +994,32 @@ sub _show_instances {
 
     if ($data){
         print colored ['blue'],"    User Data:\n";
-		&_print_txt ("\tUser Data:\n");
+        if ($print_txt){print TXT "    User Data:\n";}
         @lines = split /\n/, $data;
         foreach $line (sort @lines) {
             printf("%-21s %-50s\n","    ",$line);
-			&_print_txt ("\t\t\t$line\n");
+            if ($print_txt){printf TXT ("%-21s %-50s\n","    ",$line);}
             push @{ $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{UserData}},$line;
         }
         print "\n";
-		&_print_txt ("\n");
+		if ($print_txt){print TXT "\n";}
     }
     if ($tags){
         print colored ['blue'],"    Tags:\n";
-		&_print_txt ("\tTags:\n");
+        if ($print_txt){print TXT "    Tags:\n";}
 		foreach my $key (sort keys %$tags) {
     		$value = $tags->{$key};
     		printf("%-21s %-50s\n","    ","$key: $value");
-			&_print_txt ("\t\t\t$key: $value\n");
+            if ($print_txt){printf TXT ("%-21s %-50s\n","    ","$key: $value");}
             $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Tags}{$key}=$value;
 		}
         print "\n";
-		&_print_txt ("\n");
+		if ($print_txt){print TXT "\n";}
 
     }
     if (@groups){
         print colored ['blue'],"    Security Groups:\n";
-		&_print_txt ("\tSecurity Groups:\n");
+        if ($print_txt){print TXT "    Security Groups:\n";}
 	    for $g (sort @groups){
 		    $gid		= $g->groupId;
 		    $gname		= $g->groupName;
@@ -1025,11 +1028,13 @@ sub _show_instances {
 		    @gperms_e		= $sg->ipPermissionsEgress;
 			printf("%-21s %-50s\n","    ","$gname");
 			printf("%-26s %-50s\n","    ","ID: $gid");
-			&_print_txt ("\t\t\t$gname\n");
-			&_print_txt ("\t\t\t\tID: $gid\n");
+            if ($print_txt){
+			    printf TXT ("%-21s %-50s\n","    ","$gname");
+			    printf TXT ("%-26s %-50s\n","    ","ID: $gid");
+            }
 			if (@gperms_i) {
 				printf("%-26s %-50s\n","    ","Ingress Rules:");
-				&_print_txt ("\t\t\t\tIngress Rules:\n");
+				if ($print_txt){printf TXT ("%-26s %-50s\n","    ","Ingress Rules:");}
 				for $i (@gperms_i) {
          			$protocol = $i->ipProtocol;
          			$fromPort = $i->fromPort;
@@ -1037,17 +1042,17 @@ sub _show_instances {
          			@ranges   = $i->ipRanges;
 					next if ($protocol eq "-1");
 					printf("%-30s %-50s\n","    ","$protocol from: $fromPort to: $toPort");
-					&_print_txt ("\t\t\t\t\t$protocol from: $fromPort to: $toPort\n");
+					if ($print_txt){printf TXT ("%-30s %-50s\n","    ","$protocol from: $fromPort to: $toPort");}
 					for $r (sort @ranges) {
 						printf("%-35s %-50s\n","    ","Source IP: $r");
-						&_print_txt ("\t\t\t\t\t\tSource IP: $r\n");
+						if ($print_txt){printf TXT ("%-35s %-50s\n","    ","Source IP: $r");}
                         push @{ $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{SecurityGroups}{$gid}{$gname}{IngressRules}{$protocol}{"Ports and Source IP"}},"from: $fromPort to: $toPort  $r";
 					}
       			}
 			}
 			if (@gperms_e){
 				printf("%-26s %-50s\n\n","    ","Egress Rules:");
-				&_print_txt ("\t\t\t\tEgress Rules:\n\n");
+				if ($print_txt){printf TXT ("%-26s %-50s\n\n","    ","Egress Rules:");}
 				for $j (@gperms_e) {
          			$protocol = $j->ipProtocol;
          			$fromPort = $j->fromPort;
@@ -1055,10 +1060,10 @@ sub _show_instances {
          			@ranges   = $j->ipRanges;
 					next if ($protocol eq "-1");
 					printf("%-30s %-50s\n","    ","$protocol from: $fromPort to: $toPort");
-					&_print_txt ("\t\t\t\t\t$protocol from: $fromPort to: $toPort\n");
+					if ($print_txt){printf TXT ("%-30s %-50s\n","    ","$protocol from: $fromPort to: $toPort");}
 					for $r (sort @ranges) {
 						printf("%-35s %-50s\n","    ","Destination IP: $r");
-						&_print_txt ("\t\t\t\t\t\tDestination IP: $r\n");
+						if ($print_txt){printf TXT ("%-35s %-50s\n","    ","Destination IP: $r");}
                         push @{ $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{SecurityGroups}{$gid}{$gname}{EgressRules}{$protocol}{"Ports and Source IP"}},"from: $fromPort to: $toPort  $r";
 					}
       			}
@@ -1066,7 +1071,7 @@ sub _show_instances {
 	    }
     }
     print "\n";
-	&_print_txt ("\n");
+	if ($print_txt){print TXT "\n";}
 }
 
 sub _sec_convert {
@@ -1110,19 +1115,19 @@ sub _myexit{
 		foreach (@OUTPUT) {
 			if (($_ eq "text") || ($_ eq "") || ($_ eq "t")) {
 				$myOFILE=$OFILE . ".txt";
-				&_print_txt ("\n==============================================================\n");
-				if ($h_total){&_print_txt ("Total Instances found: $h_total\n");}
-				if ($r_count){&_print_txt ("Total Regions found: $r_count\n");}
-				if ($a_count){&_print_txt ("Total AMIs found: $a_count\n");}
-				&_print_txt ("Execution Start: $start\n");
-				&_print_txt ("Execution End: $end\n");
-				&_print_txt ("Execution Time: $run_time\n\n");
-				&_print_txt ("Command: $commandline\n");
-				&_print_txt ("User: $USER\n");
-				&_print_txt ("AWS Access ID: $masked_id\n");
-				&_print_txt ("AWS Secet Key: $masked_secret\n");
-				&_print_txt ("AWS Region: $ec2_region\n");
-				&_print_txt ("AWS API URL: $ec2_url\n");
+              	print TXT "\n==============================================================\n";
+              	if ($h_total){print TXT "Total Instances found: $h_total\n";}
+              	if ($r_count){print TXT "Total Regions found: $r_count\n";}
+              	if ($a_count){print TXT "Total AMIs found: $a_count\n";}
+              	print TXT "Execution Start: $start\n";
+              	print TXT "Execution End: $end\n";
+              	print TXT "Execution Time: $run_time\n\n";
+              	print TXT "Command: $commandline\n";
+              	print TXT "User: $USER\n";
+              	print TXT "AWS Access ID: $masked_id\n";
+              	print TXT "AWS Secet Key: $masked_secret\n";
+              	print TXT "AWS Region: $ec2_region\n";
+              	print TXT "AWS API URL: $ec2_url\n";
 				close($myOFILE);
 				push @files,"/tmp/$myOFILE";
 			} elsif (($_ eq "json") || ($_ eq "j")) {
@@ -1157,7 +1162,6 @@ print "\033[2J";    #clear the screen
 if (! $ARGV[0]) {
 	$EC="1";
     _help;
-#    _myexit ($EC);
     exit 1;
 }
 
