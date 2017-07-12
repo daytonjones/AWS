@@ -33,6 +33,7 @@ $USER=$ENV{USER};
 chop($RUNID=`/bin/date +%Y%m%d%H%M%S`);
 $OFILE="$PROGNAME_SHORT" . "-$USER" . "_$RUNID";
 $sw=`tput cols`;
+undef $cruft;
 
 if ($ENV{'EC2_REGION'}) {$ec2_region =  $ENV{'EC2_REGION'}};
 if ($ENV{'EC2_ACCESS_KEY'}) {$ec2_access_id =  $ENV{'EC2_ACCESS_KEY'}};
@@ -98,6 +99,7 @@ sub _more_info {
 
 
 |;
+    exit 0;
 }
 
 sub _help {
@@ -357,7 +359,7 @@ sub _get_opts {
 
     if (@SEARCHES) {
         print colored ['green'],"Gathering region info...\n\n";
-		&_print_txt ("Gathering region info...\n\n");
+#		&_print_txt ("Gathering region info...\n\n");
         &_get_region_info;
         foreach $search (sort @SEARCHES) {
             ($type,$what)=split(/=/,$search);
@@ -841,23 +843,25 @@ sub _get_instances {
 sub _show_instances {
     $id=shift;
     $my_r=shift;
-    $instance = $ec2->describe_instances(-instance_id=>$id);
-    $placement     = $instance->placement;
-    $reservationId = $instance->reservationId;
-    $imageId       = $instance->imageId;
-    $private_ip    = $instance->privateIpAddress;
-    $public_ip     = $instance->ipAddress;
-    $private_dns   = $instance->privateDnsName;
-    $public_dns    = $instance->dnsName;
-    $time          = $instance->launchTime;
-    $status        = $instance->current_status;
-    $vpc           = $instance->vpcId;
-    $subnet        = $instance->subnetId;
-    $type          = $instance->instanceType;
-    $data          = $instance->userData;
-    @groups        = $instance->groupSet;
-    $tags          = $instance->tags;
-    @devices       = $instance->blockDeviceMapping;
+    $instance           = $ec2->describe_instances(-instance_id=>$id);
+    $placement          = $instance->placement;
+    $reservationId      = $instance->reservationId;
+    $imageId            = $instance->imageId;
+    $private_ip         = $instance->privateIpAddress;
+    $public_ip          = $instance->ipAddress;
+    $private_dns        = $instance->privateDnsName;
+    $public_dns         = $instance->dnsName;
+    $time               = $instance->launchTime;
+    $status             = $instance->current_status;
+    $vpc                = $instance->vpcId;
+    $subnet             = $instance->subnetId;
+    $type               = $instance->instanceType;
+    $data               = $instance->userData;
+    @groups             = $instance->groupSet;
+    $tags               = $instance->tags;
+    @devices            = $instance->blockDeviceMapping;
+    $profile            = $instance->iamInstanceProfile;
+    ($cruft,$IAMrole)   = split(/\//,$profile->arn);
 
     if ($tags){
         if ($tags->{Hostname}) {
@@ -891,6 +895,7 @@ sub _show_instances {
     printf("%-30s %-50s\n", colored("    Public Name:",'blue'),$public_dns);
     printf("%-30s %-50s\n", colored("    Launch Time:",'blue'),$time);
     printf("%-30s %-50s\n", colored("    State:",'blue'),$status);
+    if ($IAMrole){printf("%-30s %-50s\n", colored("    IAM Role:",'blue'),$IAMrole);}
 	&_print_txt ("\tInstance Type:\t$type\n");
 	&_print_txt ("\tZone:\t\t$placement\n");
 	&_print_txt ("\tVPC:\t\t$vpc\n");
@@ -903,6 +908,7 @@ sub _show_instances {
 	&_print_txt ("\tPublic Name:\t$public_dns\n");
 	&_print_txt ("\tLaunch Time:\t$time\n");
 	&_print_txt ("\tState:\t\t$status\n");
+    if ($IAMrole){&_print_txt ("\tIAM Role:\t\t$IAMrole\n");}
     $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Name}=$NAME;
     $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{InstanceType}=$type;
     $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{Zone}="$placement";
@@ -916,6 +922,7 @@ sub _show_instances {
     $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{PublicDNS}=$public_dns;
     $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{LaunchTime}=$time;
     $h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{State}="$status";
+    if ($IAMrole){$h_href{$OFILE}{REGIONS}{$my_r}{Instances}{$id}{IAMRole}="$IAMrole";}
 
     if (@devices){
         print colored ['blue'],"    Volumes:\n";
@@ -1103,7 +1110,7 @@ sub _myexit{
 		foreach (@OUTPUT) {
 			if (($_ eq "text") || ($_ eq "") || ($_ eq "t")) {
 				$myOFILE=$OFILE . ".txt";
-				&_print_txt ("\n====================================================\n");
+				&_print_txt ("\n==============================================================\n");
 				if ($h_total){&_print_txt ("Total Instances found: $h_total\n");}
 				if ($r_count){&_print_txt ("Total Regions found: $r_count\n");}
 				if ($a_count){&_print_txt ("Total AMIs found: $a_count\n");}
@@ -1150,7 +1157,8 @@ print "\033[2J";    #clear the screen
 if (! $ARGV[0]) {
 	$EC="1";
     _help;
-    _myexit ($EC);
+#    _myexit ($EC);
+    exit 1;
 }
 
 # process options and gather/display results in _get_opts
