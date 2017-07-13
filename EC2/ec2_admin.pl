@@ -375,6 +375,8 @@ sub _get_opts {
                     print "Searching for role: $ir in all regions...\n";
                     if ($print_txt){printf TXT ("%s\n","Searching for role: $ir in all regions...");}
 					foreach my $r (@r_name){
+                        printf("%s%s%s\n", "[", colored($r,'green'), "]");
+                        if ($print_txt){printf TXT ("%s\n","[$r]");}
                     	&_search_iam_role($r,$ir);
 						$count=scalar(@i);
                         if ($count lt "1"){
@@ -399,6 +401,8 @@ sub _get_opts {
                     print "Searching for tag: $t_key=>$t_val in all regions...\n";
                     if ($print_txt){printf TXT ("%s\n","Searching for tag: $t_key=>$t_val in all regions...");}
 					foreach my $r (@r_name){
+                        printf("%s%s%s\n", "[", colored($r,'green'), "]");
+                        if ($print_txt){printf TXT ("%s\n","[$r]");}
                     	&_search_instance_tag($t_key,$t_val,$r);
 					}
                 }
@@ -412,6 +416,8 @@ sub _get_opts {
                     print "Searching for instance \"$s\" in all regions...\n";
 					if ($print_txt){printf TXT ("%s\n","Searching for instance \"$s\" in all regions...");}
                     foreach my $r (@r_name){
+                        printf("%s%s%s\n", "[", colored($r,'green'), "]");
+                        if ($print_txt){printf TXT ("%s\n","[$r]");}
                         &_search_instances($r,$s);
                         $count=scalar(@i);
                         if ($count lt "1"){
@@ -436,6 +442,8 @@ sub _get_opts {
                     print "Searching for \"$s\" in all regions...\n";
 					if ($print_txt){printf TXT ("%s\n","Searching for \"$s\" in all regions...");}
                     foreach my $r (@r_name){
+                        printf("%s%s%s\n", "[", colored($r,'green'), "]");
+                        if ($print_txt){printf TXT ("%s\n","[$r]");}
                         &_search_hosts($r,$s);
                         $count=scalar(@i);
                         if ($count lt "1"){
@@ -455,6 +463,8 @@ sub _get_opts {
                     print "Searching for \"$t\" instances in all regions...\n";
                     if ($print_txt){printf TXT ("%s\n","Searching for \"$t\ instances in all regions...");}
                     foreach my $r (@r_name){
+                        printf("%s%s%s\n", "[", colored($r,'green'), "]");
+                        if ($print_txt){printf TXT ("%s\n","[$r]");}
                         &_search_types($r,$t);
                         $count=scalar(@i);
 						if ($count lt "1"){
@@ -826,7 +836,6 @@ sub _search_iam_role () {
     $s_ir=shift;
     undef @i;
     $ec2 = VM::EC2->new(-access_key => $ec2_access_id,-secret_key => $ec2_secret_key,-region=>$my_ec2_region,-endpoint => $ec2_url) or die "Error: $!\n";
-    #iam-instance-profile.arn,Values=*Sight*
     @i = $ec2->describe_instances(-filter=>{'instance-state-name'=>['pending','running','shutting-down','stopping','stopped'],'iam-instance-profile.arn'=>"*$s_ir*"});
     $h_count=scalar(@i);
     if ($h_total){
