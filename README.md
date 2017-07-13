@@ -10,7 +10,8 @@
 * See help for more info
 
 * Sample Output for AMI listing
-``` [ami-12345678]
+```
+  [ami-12345678]
      Owner:                     083091234567
      Name:                      Ubuntu 16.04
      Description:               Ubuntu 16.04
@@ -22,9 +23,11 @@
      Root Device Type:          ebs
      Public:                    False
      Tags:
-                       Name: Ubuntu 16.04 04-25-2017```
+                       Name: Ubuntu 16.04 04-25-2017
+```
 * Sample Output for Region Listing
-``` [us-east-1]
+```
+ [us-east-1]
      Endpoint:         ec2.us-east-1.amazonaws.com
      Zones:
                        us-east-1a
@@ -47,10 +50,12 @@
                             Virtualization: hvm
                             Root Device Type: ebs
                             Tags:
-                                Name: Ubuntu 16.04 04-25-2017```
+                                Name: Ubuntu 16.04 04-25-2017
+```
 
 * Sample Instance Output
-``` [i-1b2b6n7t]
+```
+ [i-1b2b6n7t]
      Hostname                   my.host.net
      Instance Type:             m3.large
      Zone:                      eu-central-1a
@@ -93,8 +98,8 @@
                             Ingress Rules:
                                 tcp from: 22 to: 22
                                      Source IP: 198.168.0.1/32
-                            Egress Rules:```
-
+                            Egress Rules:
+```
 
 ---
 ### S3
