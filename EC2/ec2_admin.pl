@@ -179,6 +179,27 @@ sub _print_json {
     print JSON_OUT $js;
 }
 
+sub _set_region_name {
+    my $rname=shift;
+    switch ($rname) {
+        case "ap-northeast-1"   { $reg_name="Tokyo" }
+        case "ap-northeast-2"   { $reg_name="Seoul" }
+        case "ap-south-1"       { $reg_name="Mumbai" }
+        case "ap-southeast-1"   { $reg_name="Singapore" }
+        case "ap-southeast-2"   { $reg_name="Sydney" }
+        case "ca-central-1"     { $reg_name="Central" }
+        case "eu-central-1"     { $reg_name="Frankfurt" }
+        case "eu-west-1"        { $reg_name="Ireland" }
+        case "eu-west-2"        { $reg_name="London" }
+        case "sa-east-1"        { $reg_name="Sao Paulo" }
+        case "us-east-1"        { $reg_name="N. Virginia" }
+        case "us-east-2"        { $reg_name="Ohio" }
+        case "us-west-1"        { $reg_name="N. California" }
+        case "us-west-2"        { $reg_name="Oregon" }
+    }
+    return ($reg_name);
+}
+
 sub _set_url {
 # "switch" is part of perl core, but may be "fragile"
 # if this doesn't work, comment out the switch stanza
@@ -697,6 +718,8 @@ sub _show_regions {
         $name    = $r->regionName;
         $url     = $r->regionEndpoint;
         @zones   = $r->zones;
+        _set_region_name ($name);
+        $name=$name . " ($reg_name)";
         printf("%s%s%s\n", "[", colored("$name",'yellow'),"]");
         printf("%-30s %-20s\n", colored("    Endpoint:",'blue'),$url);
         printf("%-30s\n", colored("    Zones:",'blue'));
@@ -872,6 +895,7 @@ sub _search_instances () {
     }
     return @i;
 }
+
 sub _get_instances {
     &_search_instances;
     printf("%s %s...\n", colored("Getting list of instances in",'green'), colored($ec2_region,'cyan'));
