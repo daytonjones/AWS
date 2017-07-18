@@ -138,11 +138,11 @@ sub _list_s3_bucket_contents {
 			my $key_OwnerName = $key->{owner_displayname};
 
             printf("%-30s %-50s\n", colored("    Item:",'blue'),$key_name);
-            printf("%-30s %-50s\n", colored("    Owner:",'blue'),$key_OwnerName);
-            printf("%-30s %-50s\n", colored("    Last Modified:",'blue'),$key_lm);
-            printf("%-30s %-50s\n", colored("    MD5 sum:",'blue'),$key_etag);
-            printf("%-30s %-50s\n", colored("    Type:",'blue'),$key_class);
-            printf("%-30s %-50s\n\n", colored("    Size:",'blue'),$b_size);
+            printf("%-40s %-50s\n", colored("       Owner:",'blue'),$key_OwnerName);
+            printf("%-40s %-50s\n", colored("       Last Modified:",'blue'),$key_lm);
+            printf("%-40s %-50s\n", colored("       MD5 sum:",'blue'),$key_etag);
+            printf("%-40s %-50s\n", colored("       Type:",'blue'),$key_class);
+            printf("%-40s %-50s\n\n", colored("       Size:",'blue'),$b_size);
   		}
 		$f_count =~ s/(\d{1,3}?)(?=(\d{3})+$)/$1,/g; # add thousands seperator
 		&_prettyBytes($tot_bytes);
