@@ -570,10 +570,12 @@ sub is_error {
     defined shift->error();
 }
 
-sub _show_ami_zone{
+sub _show_ami_zone {
     $ec2_access_id = shift;
     $ec2_secret_key = shift;
-    $my_ec2_region= shift;
+    $my_ec2_region = shift;
+    &_set_region_name ($my_ec2_region);
+    $Rname = $my_ec2_region . " ($reg_name)";
     $imageowner = "self";
     $ec2a = VM::EC2->new(-access_key => $ec2_access_id,-secret_key => $ec2_secret_key,-region=>$my_ec2_region,-endpoint => $ec2_url);
     @AMI  = $ec2a->describe_images(-owner=>$imageowner);
@@ -613,10 +615,10 @@ sub _show_ami_zone{
             printf TXT ("%-26s %-50s\n","    ","Virtualization: $VirtType");
             printf TXT ("%-26s %-50s\n","    ","Root Device Type: $RootDevType");
         }
-        $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{Description}=$Desc;
-        $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{Architecture}=$Arc;
-        $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{Virtualization}=$VirtType;
-        $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{RootDevType}=$RootDevType;
+        $h_href{$OFILE}{REGIONS}{"$Rname"}{AMIs}{$_}{Description}=$Desc;
+        $h_href{$OFILE}{REGIONS}{"$Rname"}{AMIs}{$_}{Architecture}=$Arc;
+        $h_href{$OFILE}{REGIONS}{"$Rname"}{AMIs}{$_}{Virtualization}=$VirtType;
+        $h_href{$OFILE}{REGIONS}{"$Rname"}{AMIs}{$_}{RootDevType}=$RootDevType;
         unless ( ! %$i_tags ){
 				printf("%-26s %-50s\n", "    ","Tags:");
 				if ($print_txt){printf TXT ("%-26s %-50s\n", "    ","Tags:");}
@@ -624,7 +626,7 @@ sub _show_ami_zone{
                 	$value = $i_tags->{$key};
                 	printf("%-30s %-50s\n","    ","$key: $value");
                 	if ($print_txt){printf TXT ("%-30s %-50s\n","    ","$key: $value");}
-                    $h_href{$OFILE}{REGIONS}{$my_ec2_region}{AMIs}{$_}{Tags}{$key}=$value;
+                    $h_href{$OFILE}{REGIONS}{"$Rname"}{AMIs}{$_}{Tags}{$key}=$value;
                 }
         }
         print "\n";
@@ -633,6 +635,8 @@ sub _show_ami_zone{
 }
 
 sub _show_ami {
+    _set_region_name ($ec2_region);
+    $Rname= $ec2_region . " ($reg_name)";
     $imageowner = "self";
     print colored ['green'],"Gathering AMI info for $ec2_region...\n\n";
     if ($print_txt){printf TXT ("%s\n\n","Gathering AMI info for $ec2_region...");}
@@ -686,16 +690,16 @@ sub _show_ami {
     	    printf TXT ("%-30s %-50s\n","    Root Device Type:",$RootDevType);
     	    printf TXT ("%-30s %-50s\n","    Public:",$Public);
         }
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Owner}=$OwnerID;
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Name}=$Name;
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Description}=$Desc;
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{State}=$State;
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{ImageType}=$ImageType;
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Architecture}=$Arc;
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Virtualization}=$VirtType;
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Hypervisor}=$HV;
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{RootDeviceType}=$RootDevType;
-        $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Public}=$Public;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{Owner}=$OwnerID;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{Name}=$Name;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{Description}=$Desc;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{State}=$State;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{ImageType}=$ImageType;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{Architecture}=$Arc;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{Virtualization}=$VirtType;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{Hypervisor}=$HV;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{RootDeviceType}=$RootDevType;
+        $h_href{$OFILE}{AMIs}{$Rname}{$_}{Public}=$Public;
         unless ( ! %$i_tags ){
         	print colored ['blue'],"    Tags:\n";
         	if ($print_txt){ print TXT ("    Tags:\n");}
@@ -703,7 +707,7 @@ sub _show_ami {
             	$value = $i_tags->{$key};
             	printf("%-21s %-50s\n","    ","$key: $value");
             	if ($print_txt){printf TXT ("%-21s %-50s\n","    ","$key: $value");}
-                $h_href{$OFILE}{AMIs}{$ec2_region}{$_}{Tags}{$key}=$value;
+                $h_href{$OFILE}{AMIs}{$Rname}{$_}{Tags}{$key}=$value;
         	}
     	}
        	print "\n";
@@ -718,20 +722,20 @@ sub _show_regions {
         $name    = $r->regionName;
         $url     = $r->regionEndpoint;
         @zones   = $r->zones;
-        _set_region_name ($name);
-        $name=$name . " ($reg_name)";
-        printf("%s%s%s\n", "[", colored("$name",'yellow'),"]");
+        &_set_region_name ($name);
+        $Rname=$name . " ($reg_name)";
+        printf("%s%s%s\n", "[", colored("$Rname",'yellow'),"]");
         printf("%-30s %-20s\n", colored("    Endpoint:",'blue'),$url);
         printf("%-30s\n", colored("    Zones:",'blue'));
         if ($print_txt){
-		    printf TXT ("%s\n", "[$name]");
+		    printf TXT ("%s\n", "[$Rname]");
 		    printf TXT ("%-30s %-20s\n","    Endpoint:",$url);
 		    printf TXT ("%-30s\n","    Zones:");
     }
-        $h_href{$OFILE}{REGIONS}{$r}{Endpoint}=$url;
+        $h_href{$OFILE}{REGIONS}{"$Rname"}{Endpoint}=$url;
         foreach $z (sort @zones) {
             printf("%-21s %-50s\n","    ",$z);
-            push @{ $h_href{$OFILE}{REGIONS}{$name}{Zones}},"$z";
+            push @{ $h_href{$OFILE}{REGIONS}{"$Rname"}{Zones}},"$z";
 			if ($print_txt){printf TXT ("%-21s %-50s\n","    ",$z);}
         }
         $ec2 = VM::EC2->new(-access_key => $ec2_access_id,-secret_key => $ec2_secret_key,-region=>$name) or die "Error: $!\n";
@@ -760,9 +764,9 @@ sub _show_regions {
                     printf TXT ("%-26s %-50s\n","    ","Tenancy: $tenancy");
                     printf TXT ("%-26s %-50s\n\n","    ","State: $state");
                 }
-                $h_href{$OFILE}{REGIONS}{$name}{VPCs}{$v}{$n}{CIDR}=$cidr;
-                $h_href{$OFILE}{REGIONS}{$name}{VPCs}{$v}{$n}{Tenancy}="$tenancy";
-                $h_href{$OFILE}{REGIONS}{$name}{VPCs}{$v}{$n}{State}="$state";
+                $h_href{$OFILE}{REGIONS}{"$Rname"}{VPCs}{$v}{$n}{CIDR}=$cidr;
+                $h_href{$OFILE}{REGIONS}{"$Rname"}{VPCs}{$v}{$n}{Tenancy}="$tenancy";
+                $h_href{$OFILE}{REGIONS}{"$Rname"}{VPCs}{$v}{$n}{State}="$state";
             }
 		}
 		printf("%-30s\n", colored("    AMIs:",'blue'));
