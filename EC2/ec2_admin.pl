@@ -1242,7 +1242,7 @@ if (! $ARGV[0]) {
 }
 
 # process options and gather/display results in _get_opts
-$commandline = join " ", $0, @ARGV;
+$commandline = join " ", $PROGNAME, @ARGV;
 chomp($start=`date`);
 $ss=time();
 _get_opts;
