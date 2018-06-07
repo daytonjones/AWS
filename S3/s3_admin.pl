@@ -16,6 +16,13 @@
 #      CREATED: 04/28/2017 02:18:53 PM
 #     REVISION: ---
 #===============================================================================
+use utf8;
+use Term::Spinner::Color;
+
+my $spin = Term::Spinner::Color->new(
+  'delay' => 0.3,
+  'colorcycle' => 1,
+  );
 
 ## delete files from bucket
 ##  $bucket->delete_key('reminder.txt') or die $s3->err . ": " . $s3->errstr;
@@ -119,7 +126,9 @@ sub _list_s3_bucket_contents {
 	$bucket = $s3->bucket($b) or die $s3->err . ": " . $s3->errstr;
 	print "\nGetting contents of S3 bucket: [$b] \n\tThis might take a while...\n\n";
     $time_s=time();
+    $spin->auto_start();
 	$response = $bucket->list_all or die $s3->err . ": " . $s3->errstr;
+    $spin->auto_done();
 	if (@{ $response->{keys} }) {
         $time_e=time();
         $l_seconds= $time_e - $time_s;
