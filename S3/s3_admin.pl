@@ -20,6 +20,7 @@ use utf8;
 use Term::Spinner::Color;
 
 my $spin = Term::Spinner::Color->new(
+  'seq' => ['     ◑', '     ◒', '     ◐', '     ◓'],
   'delay' => 0.3,
   'colorcycle' => 1,
   );
